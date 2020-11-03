@@ -1,3 +1,8 @@
 The code implement G. Elliot Morris code https://gist.github.com/elliottmorris/c70fd4d32049c9986a45e2dfc07fb4f0 into a streamlit app.
+The streamline code is due to https://github.com/903124.
+
+I added a gaugue plot showing win probabilities.
 
 Run by 'streamlit run app.py`
+
+
