@@ -120,7 +120,7 @@ def read_file():
 
 
     # bind new simulation columns for the congressional districts, based on the above
-
+    #sim_forecast = sim_forecast.assign(ME1='', ME2='')
     sim_forecast[['ME1','ME2']] =  (pd.concat([sim_forecast[['ME']]]*2,axis=1) + np.random.normal( me_ne_leans[me_ne_leans.state == 'ME']['dem_cd_lean'], 0.0075, (len(sim_forecast),len(me_ne_leans[me_ne_leans.state == 'ME']['dem_cd_lean'].index)))).values
     sim_forecast[['NE1','NE2','NE3']] =   (pd.concat([sim_forecast[['NE']]]*3,axis=1) + np.random.normal( me_ne_leans[me_ne_leans.state == 'NE']['dem_cd_lean'], 0.0075, (len(sim_forecast),len(me_ne_leans[me_ne_leans.state == 'NE']['dem_cd_lean'].index)))).values
 
@@ -141,7 +141,7 @@ def main():
     st.header("The Economist election model simulation")
     st.write("The R version of the code is kindly provided by G. Elliot Morris from The Economist")
     st.write("https://gist.github.com/elliottmorris/c70fd4d32049c9986a45e2dfc07fb4f0\n")
-    st.write('The code takes in The Economist election prediction model and allow user to do simulation base on true election outcome. The adjustmentable parameters are states won by candidate and lower/upper bound of vote share in the state.')
+    st.write('The code takes in The Economist election prediction model and allows user to do simulations based on true election outcomes. The parameters are states won by candidates and lower/upper bound of vote share in the state.')
 
 
     mu, Sigma, ev = read_file()
@@ -181,23 +181,41 @@ def main():
             
     with st.spinner('Sampling from simulation please wait...'):
         try:
-            state_win, p, sd, ev_dist = update_prob(mu, Sigma, ev,biden_states = biden_states,trump_states = trump_states,biden_scores_list = None)
+            state_win, p, sd, ev_dist = update_prob(mu, Sigma, ev,biden_states = biden_states,trump_states = trump_states, biden_scores_list = None, target_nsim=5000)
 
             st.write(pd.DataFrame({'Win %':round(100*state_win,1),'':''}).T)
             trump_win_chance = 100*len(ev_dist[ev_dist < 269])/float(len(ev_dist))
+            biden_win_chance = 100*len(ev_dist[ev_dist > 269])/float(len(ev_dist))
+            tie_chance = 100*len(ev_dist[ev_dist == 269])/float(len(ev_dist))
+
             st.write("Trump State: {}".format(trump_states))
             st.write("Biden State: {}".format(biden_states))
             st.write('')
-            st.write("Trump win = {:.1f}%".format(trump_win_chance))
-            layout = go.Layout(title = 'Simulation of electoral vote',xaxis = go.XAxis(title = 'Electoral Votes'),yaxis = go.YAxis(showticklabels=False))
+
+
+
+
+            fig2 = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = biden_win_chance,
+                title = {'text': "Biden chance"},
+                gauge=  { 'axis' :{'range':[0,100]}, 'bar':{'color': '#0001ff' if biden_win_chance>45 else'#ff0100'}},
+                domain = {'x': [0, 1], 'y': [0, 1]}
+            ))
+
+            layout = go.Layout(title = "Forcast: Trump win = {:.1f}%".format(trump_win_chance) + "\t\tBiden win = {:.1f}%".format(biden_win_chance) +  "\t\tTie = {:.1f}%".format(tie_chance),
+            xaxis = go.XAxis(title = 'Electoral Votes'),yaxis = go.YAxis(showticklabels=False))
             # fig = px.histogram(pd.DataFrame({'Electoral votes':ev_dist}), histnorm='probability density')
             fig = go.Figure(layout=layout)
-            fig.add_trace(go.Histogram(x=ev_dist[ev_dist > 269],name='Biden win',xbins=dict(start=0,end=538,size=1),marker_color='#0000ff'))
-            fig.add_trace(go.Histogram(x=ev_dist[ev_dist < 269],name='Trump win',xbins=dict(start=0,end=538,size=1),marker_color='#ff0000'))
-            fig.add_trace(go.Histogram(x=ev_dist[ev_dist == 269],name='Draw',xbins=dict(start=0,end=538,size=1),marker_color='#bfbfbf'))
+            fig.add_trace(go.Histogram(x=ev_dist[ev_dist > 269],name='Biden Wins',xbins=dict(start=0,end=538,size=1),marker_color='#0000ff'))
+            fig.add_trace(go.Histogram(x=ev_dist[ev_dist < 269],name='Trump Wins',xbins=dict(start=0,end=538,size=1),marker_color='#ff0000'))
+            fig.add_trace(go.Histogram(x=ev_dist[ev_dist == 269],name='Tie',xbins=dict(start=0,end=538,size=1),marker_color='#bfbfbf'))
+            fig.update_layout(autosize=True)
             # fig.update_traces(,marker_color='#FF0000')
+
             
-            plot = st.plotly_chart(fig, use_container_width=True)
+            plot1 = st.plotly_chart(fig, use_container_width=True)
+            plot2 = st.plotly_chart(fig2, use_container_width=True)
 
         except ValueError:
             st.warning('More than 99.99% of the samples are rejected; you should relax some contraints.')
