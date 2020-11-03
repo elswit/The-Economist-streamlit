@@ -120,7 +120,6 @@ def read_file():
 
 
     # bind new simulation columns for the congressional districts, based on the above
-    #sim_forecast = sim_forecast.assign(ME1='', ME2='')
     sim_forecast[['ME1','ME2']] =  (pd.concat([sim_forecast[['ME']]]*2,axis=1) + np.random.normal( me_ne_leans[me_ne_leans.state == 'ME']['dem_cd_lean'], 0.0075, (len(sim_forecast),len(me_ne_leans[me_ne_leans.state == 'ME']['dem_cd_lean'].index)))).values
     sim_forecast[['NE1','NE2','NE3']] =   (pd.concat([sim_forecast[['NE']]]*3,axis=1) + np.random.normal( me_ne_leans[me_ne_leans.state == 'NE']['dem_cd_lean'], 0.0075, (len(sim_forecast),len(me_ne_leans[me_ne_leans.state == 'NE']['dem_cd_lean'].index)))).values
 
@@ -181,7 +180,7 @@ def main():
             
     with st.spinner('Sampling from simulation please wait...'):
         try:
-            state_win, p, sd, ev_dist = update_prob(mu, Sigma, ev,biden_states = biden_states,trump_states = trump_states, biden_scores_list = None, target_nsim=5000)
+            state_win, p, sd, ev_dist = update_prob(mu, Sigma, ev,biden_states = biden_states,trump_states = trump_states, biden_scores_list = None, target_nsim=2000)
 
             st.write(pd.DataFrame({'Win %':round(100*state_win,1),'':''}).T)
             trump_win_chance = 100*len(ev_dist[ev_dist < 269])/float(len(ev_dist))
